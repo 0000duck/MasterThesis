@@ -1,0 +1,29 @@
+----------------Protocol--------------
+Time: 10:14, 08-03-2019
+RESULT:----Check is NOT OK,please use Tracker pilot to set new compensation---- 
+Total measurements: 6
+Stability control: 0.000030
+New compensation: 7750.664601 
+Standart deviation: 0.001306
+Current compensation: 
+Deviation: 7750.664601
+Tolarence used:155013.292019 
+---------------Tracker-----------------
+Product name:Leica AT401
+Serial Number:390740
+IP adress: 192.168.241.6
+Target:RRR 1.5in   serial number:  
+-------------Meteo Data----------------
+Temperature:
+Humidity:
+Pressure:
+-----------Measured data---------------
+Inside First stand:
+7750.671317 +- 0.000481 mm
+7750.713587 +- 0.000872 mm
+Outstand:
+7750.730302 +- 0.000240 mm
+7750.786003 +- 0.000811 mm
+Inside second stand:
+7750.715182 +- 0.000503 mm
+7750.735126 +- 0.000819 mm

@@ -28,9 +28,6 @@ protected:
 
 
 
-
-
-// TO DO, RENAME THIS STUPID NAME OF CLASS
 class CMyESAPIReceive : public EmScon::CESAPIReceive // inheritance from CESAPIReceive in ES_CPP_APi
 {
 protected:
@@ -41,14 +38,40 @@ protected:
 	void OnInitializeAnswer();// initialization done? yes? 
 	void OnReflectorPosAnswer(const ReflectorPosResultT& reflPos); // get position(tracking) 
 	void OnSingleMeasurementAnswer(const SingleMeasResultT& singleMeas);// get single measurement answer (standard)
-	void OnGetSystemSettingsAnswer(const SystemSettingsDataT& systemSettings); // get system settings
-	void OnGetCompensationAnswer(const int iInternalCompensationId);
-						
-	
+	void OnGetSystemSettingsAnswer(const SystemSettingsDataT& systemSettings); // get system settings (to change measure mode)
+	void OnGetReflectorsAnswer(const int            iTotalReflectors,
+								const int            iInternalReflectorId,
+								const ES_TargetType  targetType,
+								const double         dSurfaceOffset,
+								const unsigned short cReflectorName[32]);
+	void OnGetTrackerInfoAnswer(const ES_LTSensorType trackerType,
+									const unsigned short cTrackerName[32],
+									const long lSerialNumber,
+									const int iCompensationIdNumber,
+									const bool bHasADM,
+									const bool bHasOverviewCamera,
+									const bool bHasNivel,
+									const double dNivelMountOffset,
+									const double dMaxDistance,
+									const double dMinDistance,
+									const int iMaxDataRate,
+									const int iNumberOfFaces,
+									const double dHzAngleRange,
+									const double dVtAngleRange,
+									const ES_TrkAccuracyModel accuracyModel,
+									const int iMajLCPFirmwareVersion,
+									const int iMinLCPFirmwareVersion);
+	void OnGetReflectorAnswer(const int iInternalReflectorId);
+	void OnSetReflectorAnswer();
+	void OnGetUnitsAnswer(const SystemUnitsDataT& unitsSettings);
+	void OnPositionRelativeHVAnswer();
+	void OnGetMeasurementModeAnswer(const ES_MeasMode measMode);
+	void OnSetMeasurementModeAnswer();
+	void OnGetLongSystemParamAnswer(const long lParameter);
+	CMyESAPICommand m_EsCommand; // can call next command after other is finished
 
-
-	CMyESAPICommand m_EsCommand; // Call next command after other is finnished
 };
+
 
 
 
@@ -82,6 +105,10 @@ protected:
 	bool m_bConnected;
 	CMyESAPICommand m_EsCommand;
 public:
+	
+
+
+
 	CMySocket m_socket;
 	CMyESAPIReceive m_EsReceive;
 	CEdit m_ip_address;
@@ -92,5 +119,47 @@ public:
 	afx_msg void OnBnClickedInitialization();
 	CStatic m_current_position;
 	CStatic m_measure_result;
-	CStatic m_currentcomp;
+	afx_msg void OnBnClickedStore();
+	CListBox m_measure_list;
+	CButton m_store;
+	CButton m_protocol;
+	afx_msg void OnBnClickedProtocol();
+	CStatic m_picture;
+	CButton m_initialization;
+	CButton m_measure;
+	CButton m_apply;
+	CStatic m_serial;
+
+
+	CComboBox m_reflectorscombo; 
+	int m_nReflectorCount;
+	int m_reflIDMap[24];
+	CString m_reflNameMap[24];
+	void InitReflectorBox();
+
+	
+	afx_msg void OnBnClickedsetreflector();
+
+	SystemSettingsDataT setting_parameters;
+	double final_measure;
+	double final_deviation;
+	std::vector<double> lengths;
+	std::vector<double> deviations;
+
+
+	CStatic m_product;
+	CEdit m_reflectorid;
+	CButton m_stability;
+	afx_msg void OnBnClickedRotate();
+	CEdit m_compeinput;
+	CStatic m_temperature;
+	CStatic m_pressure;
+	CStatic m_humidity;
+	afx_msg void OnBnClickedIniOn();
+	afx_msg void OnBnClickedIniOff();
+	CButton m_ini_off;
+	CButton m_ini_on;
+	CComboBox m_measuremode;
+	void InitMeasuremodeBox();
+	afx_msg void OnBnClickedSetmeasure();
 };
