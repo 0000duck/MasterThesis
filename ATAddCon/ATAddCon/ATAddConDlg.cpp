@@ -205,6 +205,8 @@ void CATAddConDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_INI_OFF, m_ini_off);
 	DDX_Control(pDX, IDC_INI_ON, m_ini_on);
 	DDX_Control(pDX, IDC_MEASUREMODE, m_measuremode);
+	DDX_Control(pDX, IDC_ROTATE, m_rotate);
+	DDX_Control(pDX, IDC_SETMEASURE, m_setmeasure);
 }
 
 BEGIN_MESSAGE_MAP(CATAddConDlg, CDialogEx)
@@ -241,14 +243,18 @@ BOOL CATAddConDlg::OnInitDialog()
 	m_initialization.EnableWindow(false);
 	m_measure.EnableWindow(false);
 	m_apply.EnableWindow(false);
+	m_rotate.EnableWindow(false);
+	m_setmeasure.EnableWindow(false);
 	InitMeasuremodeBox();
 	HBITMAP picture = (HBITMAP)LoadImage(NULL, L"baseline.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);// set picture
 	m_picture.SetBitmap(picture);// set picture
 
+	HICON hIcon = LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_ICON1)); // set icon
+	SetIcon(hIcon, FALSE);
 	// Set the icon for this dialog.  The framework does this automatically
 	//  when the application's main window is not a dialog
-	SetIcon(m_hIcon, TRUE);			// Set big icon
-	SetIcon(m_hIcon, FALSE);		// Set small icon
+	//SetIcon(m_hIcon, TRUE);			// Set big icon
+	//SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
 
@@ -289,12 +295,10 @@ void CATAddConDlg::OnPaint()
 // The system calls this function to obtain the cursor to display while the user drags
 //  the minimized window.
 
-//// ICON i dodnt need that
 HCURSOR CATAddConDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
-////////////
 
 
 
@@ -319,6 +323,8 @@ void CATAddConDlg::OnBnClickedconnect()
 		m_initialization.EnableWindow(true);
 		m_apply.EnableWindow(true);
 		m_measure.EnableWindow(true);
+		m_setmeasure.EnableWindow(true);
+		m_rotate.EnableWindow(true);
 		m_EsCommand.SetCoordinateSystemType(ES_CS_SCW); // sets coordinate system  to ES_CS_SCW
 		m_EsCommand.GetSystemSettings();				// set settings to tracking and save
 		m_EsCommand.GetReflectors();					// reflectors name
@@ -460,7 +466,6 @@ void CATAddConDlg::OnBnClickedMeasure()
 {
 	if (m_bConnected == true)
 	{
-		pMainWnd->m_apply.EnableWindow(false);
 		pMainWnd->m_measure.EnableWindow(false);
 		setting_parameters.bSendReflectorPositionData = false;
 		m_EsCommand.SetSystemSettings(setting_parameters); // tracking off
@@ -479,13 +484,17 @@ void CATAddConDlg::OnBnClickedMeasure()
 void CMyESAPIReceive::OnSingleMeasurementAnswer(const SingleMeasResultT& singleMeas)
 {
 	
-	pMainWnd->final_measure = singleMeas.dVal3*sin(singleMeas.dVal2*-M_PI);
-	pMainWnd->final_deviation = singleMeas.dStd3;///////////////////////////////////////////////////////////////////////////////////////////////////////////////care !!!! dodelej
+	//pMainWnd->final_measure = singleMeas.dVal3*sin(singleMeas.dVal2*M_PI/200);
+	//pMainWnd->final_deviation = sqrt(pow(cos(singleMeas.dVal2*M_PI/200), 2)*pow(singleMeas.dVal3, 2)*pow(singleMeas.dStd2*M_PI/200, 2) + pow(singleMeas.dStd3, 2)* pow(sin(singleMeas.dVal2*M_PI / 200), 2));
+	pMainWnd->dis = singleMeas.dVal3;
+	pMainWnd->dis_dv = singleMeas.dStd3;
+	pMainWnd->Hz = singleMeas.dVal1;
+	pMainWnd->Hz_dv = singleMeas.dStd1;
+	pMainWnd->Z= singleMeas.dVal2;
+	pMainWnd->Z_dv = singleMeas.dStd2;
 
 	CString single_measure;
-	single_measure.Format(_T("Distance=%lf +-%lf mm"),
-		pMainWnd->final_measure,
-		pMainWnd->final_deviation);
+	single_measure.Format(_T("Hz=%0.4lf +-%0.4lfg\nZ=%0.4lf +-%0.4lfg\nDistance=%0.4lf +-%0.4lfmm"), pMainWnd->Hz,pMainWnd->Hz_dv, pMainWnd->Z, pMainWnd->Z_dv, pMainWnd->dis, pMainWnd->dis_dv);
 
 	pMainWnd->m_measure_result.SetWindowText(single_measure);
 	pMainWnd->m_status.SetWindowText(_T("Measurement Done!"));
@@ -496,9 +505,9 @@ void CMyESAPIReceive::OnSingleMeasurementAnswer(const SingleMeasResultT& singleM
 	pMainWnd->m_store.EnableWindow(true);
 	pMainWnd->m_measure.EnableWindow(true);
 
-	CString temp; temp.Format(_T("%0.1f"), singleMeas.dTemperature);
-	CString pres; pres.Format(_T("%0.1f"), singleMeas.dPressure);
-	CString hum; hum.Format(_T("%0.1f"), singleMeas.dHumidity);
+	CString temp; temp.Format(_T("%0.1f°C"), singleMeas.dTemperature);
+	CString pres; pres.Format(_T("%0.1fmBar"), singleMeas.dPressure);
+	CString hum; hum.Format(_T("%0.1f%%"), singleMeas.dHumidity);
 	pMainWnd->m_temperature.SetWindowText(temp);
 	pMainWnd->m_humidity.SetWindowText(pres);
 	pMainWnd->m_pressure.SetWindowText(hum);
@@ -519,8 +528,7 @@ void CATAddConDlg::OnBnClickedInitialization()
 void CMyESAPIReceive::OnInitializeAnswer()
 {
 	pMainWnd->m_status.SetWindowText(_T("Initialization done"));
-	//m_EsCommand.
-
+	pMainWnd->m_measure.EnableWindow(true);// if bug during measurement
 }
 
 
@@ -530,7 +538,7 @@ void CMyESAPIReceive::OnInitializeAnswer()
 void CMyESAPIReceive::OnReflectorPosAnswer(const ReflectorPosResultT& reflPos)
 {
 		CString current_possition;
-		current_possition.Format(_T("HZ=%lf, V=%lf, Distance=%lf"), 
+		current_possition.Format(_T("HZ=%0.4lfg, V=%0.4lfg, Distance=%0.4lfmm"), 
 									reflPos.dVal1,
 									reflPos.dVal2,
 									reflPos.dVal3);
@@ -545,17 +553,32 @@ void CATAddConDlg::OnBnClickedStore()
 	{
 		pMainWnd->m_store.EnableWindow(false);
 		pMainWnd->m_measure.EnableWindow(true);
-		lengths.push_back(final_measure);// add to vector
-		deviations.push_back(final_deviation);//add to vector
-		auto size = lengths.size(); // size of vector
+		distances.push_back(dis);// add to vector
+		distances_dv.push_back(dis_dv);// add to vector
+		horizontals.push_back(Hz);// add to vector
+		horizontals_dv.push_back(Hz_dv);// add to vector
+		zenits.push_back(Z);// add to vector
+		zenits_dv.push_back(Z_dv);// add to vector
 
-		CString fd;
-		CString fm;
+
+		auto size = distances.size(); // size of vector
+
+		CString f_d;
+		CString f_d_dv;
+		CString f_Hz;
+		CString f_Hz_dv;
+		CString f_Z;
+		CString f_Z_dv;
 		CString sizeSTR;
-		fd.Format(_T("%f"), final_measure);
-		fm.Format(_T("%f"), final_deviation);
+		f_d.Format(_T("%0.4f"), dis);
+		f_d_dv.Format(_T("%0.4f"), dis_dv);
+		f_Hz.Format(_T("%0.4f"), Hz);
+		f_Hz_dv.Format(_T("%0.4f"), Hz_dv);
+		f_Z.Format(_T("%0.4f"), Z);
+		f_Z_dv.Format(_T("%0.4f"), Z_dv);
 		sizeSTR.Format(_T("%d"), size);
-		m_measure_list.AddString(sizeSTR+") "+fd+" +- "+fm +"mm");// add to listview
+
+		m_measure_list.AddString(sizeSTR+")  Hz:"+f_Hz+" +- "+f_Hz_dv +"g  Z:"+ f_Z + " +- " + f_Z_dv + "g  Dis:"+ f_d + " +- " + f_d_dv + "mm ");// add to listview
 
 		if (size == 2) {
 			HBITMAP picture = (HBITMAP)LoadImage(NULL, L"second.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);// set picture
@@ -575,6 +598,7 @@ void CATAddConDlg::OnBnClickedStore()
 			m_protocol.EnableWindow(true);
 			pMainWnd->m_measure.EnableWindow(false);
 		}
+		pMainWnd->m_status.SetWindowText(_T("Measurement stored"));
 	}
 }
 
@@ -601,89 +625,128 @@ void CATAddConDlg::OnBnClickedProtocol()
 		CString reflector;
 		m_reflectorscombo.GetWindowText(reflector);
 
+		CString temperature;
+		m_temperature.GetWindowText(temperature);
+		CString humidity;
+		m_humidity.GetWindowText(humidity);
+		CString pressure;
+		m_pressure.GetWindowText(pressure);
+
 		// stability control
 		CString stabilitystr;
-		if (lengths.size() == 6){
-			double stability = deviations[0] + deviations[1] - deviations[4] - deviations[5];
-			stabilitystr.Format(_T("%f"), stability);
+		if (distances.size() == 6){
+			double stability = distances[0] + distances[1] - distances[4] - distances[5];
+			stabilitystr.Format(_T("%0.4fmm"), stability);
 		}
 		else{
 			stabilitystr.Format(_T("not included"));
 		}
-		// compensation deviation
+		// compensation ---- calculation
 		CString compensationinput;
-		m_compeinput.GetWindowText(compensationinput);
-		double newcomp = (lengths[0] + lengths[1] - abs(lengths[2] - lengths[3])) / 2;
-		double currentcomp = _tstof(compensationinput);
-		double comp_deviation = newcomp - currentcomp;
+		m_compeinput.GetWindowText(compensationinput); // loading current compensation
+		double currentcomp = _tstof(compensationinput);// from string to double
+
+		std::vector <double>hor_dis;
+		std::vector <double>hor_dis_dv;
+		for (int i = 0; i < 4; i++) {
+			hor_dis.push_back(sin(zenits[i] * M_PI / 200) * distances[i]);
+			hor_dis_dv.push_back(sqrt(pow(distances_dv[i], 2) * pow(sin(zenits[i] * M_PI / 200), 2) + pow(cos(zenits[i] * M_PI / 200), 2)*pow(zenits_dv[i] * M_PI / 200, 2)));
+		}
+		double Hz1 = horizontals[0] - horizontals[1]; // angles
+		double Hz2 = horizontals[2] - horizontals[3];
+
+		double Hz1_dv = sqrt(pow(horizontals_dv[0], 2) + pow(horizontals_dv[1], 2)); // angles deviations
+		double Hz2_dv = sqrt(pow(horizontals_dv[2], 2) + pow(horizontals_dv[3], 2));
+
+		// cosine lenghts
+		double L1 = sqrt(pow(hor_dis[0], 2) + pow(hor_dis[1], 2) - 2 * hor_dis[0] * hor_dis[1] * cos(Hz1 * M_PI / 200));
+		double L2 = sqrt(pow(hor_dis[2], 2) + pow(hor_dis[3], 2) - 2 * hor_dis[2] * hor_dis[3] * cos(Hz2 * M_PI / 200));
+
+
+		double L1_dv = sqrt(pow((hor_dis[0] - hor_dis[1] * cos(Hz1*M_PI / 200)) / L1, 2)*pow(hor_dis_dv[0], 2) + pow((hor_dis[1] - hor_dis[0] * cos(Hz1*M_PI / 200)) / L1, 2)*pow(hor_dis_dv[1], 2) + pow((hor_dis[0] * hor_dis[1] * sin(Hz1*M_PI / 200)) / L1, 2)*pow(Hz1_dv*M_PI / 200, 2));
+		double L2_dv = sqrt(pow((hor_dis[2] - hor_dis[3] * cos(Hz2*M_PI / 200)) / L2, 2)*pow(hor_dis_dv[2], 2) + pow((hor_dis[3] - hor_dis[2] * cos(Hz2*M_PI / 200)) / L2, 2)*pow(hor_dis_dv[3], 2) + pow((hor_dis[2] * hor_dis[3] * sin(Hz2*M_PI / 200)) / L2, 2)*pow(Hz2_dv*M_PI / 200, 2));
+
+		double comp_diff = (L2 - L1) / 2; // this is difference between new and old comp, because we are measuring with active additional constant
+		double newcomp_dv= sqrt((pow(L1_dv, 2) + pow(L2_dv, 2)) / 4);
+		double newcomp = currentcomp + comp_diff;
+
+
 		// tolerance
 		CString result;
-		if (comp_deviation < 5 && comp_deviation > -5) {
+		if (comp_diff < 0.005 && comp_diff > -0.005) {
 			result.Format(_T("----Check is OK----"));
 		}
 		else {
 			result.Format(_T("----Check is NOT OK,please use Tracker pilot to set new compensation----"));
 		}
-
-		// length edit
-		if (lengths.size() == 4) {
+		int measurement_size = distances.size();
+		// length edit (pushing zeros if size is 4)
+		if (distances.size() == 4) {
 			for (int i = 0; i < 2; i++) {
-				lengths.push_back(0);
-				deviations.push_back(0);
+				distances.push_back(0);
+				distances_dv.push_back(0);
+				horizontals.push_back(0);
+				horizontals_dv.push_back(0);
+				zenits.push_back(0);
+				zenits_dv.push_back(0);
 			}
 		}
 
 
 
 		CString protocol;
-		protocol.Format(_T("----------------Protocol--------------\n\
-	Time: %s\n\
-	RESULT:%s \n\
-	Total measurements: %d\n\
-	Stability control: %s\n\
-	New compensation: %f \n\
-	Standart deviation: %f\n\
-	Current compensation: %s\n\
-	Deviation: %f\n\
-	Tolarence used:%f \n\
-	---------------Tracker-----------------\n\
-	Product name:%s\n\
-	Serial Number:%s\n\
-	IP adress: %s\n\
-	Target:%s   serial number: %s \n\
-	-------------Meteo Data----------------\n\
-	Temperature:\n\
-	Humidity:\n\
-	Pressure:\n\
-	-----------Measured data---------------\n\
-	First inside stand:\n\
-	%f +- %f mm\n\
-	%f +- %f mm\n\
-	Outside stand:\n\
-	%f +- %f mm\n\
-	%f +- %f mm\n\
-	Second inside stand:\n\
-	%f +- %f mm\n\
-	%f +- %f mm\n"), CTime::GetCurrentTime().Format("%H:%M, %d-%m-%Y"),
+		protocol.Format(_T(
+"----------------Protocol--------------\n\
+Time: %s\n\
+RESULT:%s \n\
+Total measurements: %d\n\
+Stability control: %s\n\
+New compensation: %0.4fmm \n\
+Standart deviation: %0.4fmm\n\
+Current compensation: %smm\n\
+Deviation: %0.4fmm\n\
+Tolerance used:%0.0f%% \n\
+---------------Tracker-----------------\n\
+Product name:%s\n\
+Serial Number:%s\n\
+IP adress: %s\n\
+Target:%s   serial number: %s \n\
+-------------Meteo Data----------------\n\
+Temperature:%s\n\
+Humidity:%s\n\
+Pressure:%s\n\
+-----------Measured data---------------\n\
+First inside stand:\n\
+Hz:%0.4f +- %0.4fg  Z:%0.4f +- %0.4fg  dis:%0.4f +- %0.4fmm\n\
+Hz:%0.4f +- %0.4fg  Z:%0.4f +- %0.4fg  dis:%0.4f +- %0.4fmm\n\
+Outside stand:\n\
+Hz:%0.4f +- %0.4fg  Z:%0.4f +- %0.4fg  dis:%0.4f +- %0.4fmm\n\
+Hz:%0.4f +- %0.4fg  Z:%0.4f +- %0.4fg  dis:%0.4f +- %0.4fmm\n\
+Second inside stand:\n\
+Hz:%0.4f +- %0.4fg  Z:%0.4f +- %0.4fg  dis:%0.4f +- %0.4fmm\n\
+Hz:%0.4f +- %0.4fg  Z:%0.4f +- %0.4fg  dis:%0.4f +- %0.4fmm\n"), CTime::GetCurrentTime().Format("%H:%M, %d-%m-%Y"),
 				result,
-				lengths.size(),
+				measurement_size,
 				stabilitystr,
 				newcomp,
-				sqrt(deviations[0] * deviations[0] + deviations[1] * deviations[1] + deviations[2] * deviations[2] + deviations[3] * deviations[3]),
+				newcomp_dv,
 				compensationinput,
-				comp_deviation,
-				comp_deviation*20,
+				comp_diff,
+				comp_diff*20000,
 				product,
 				productid,
 				ip_adress,
 				reflector,
 				reflectorid,
-				lengths[0], deviations[0],
-				lengths[1], deviations[1],
-				lengths[2], deviations[2],
-				lengths[3], deviations[3],
-				lengths[4], deviations[4],
-				lengths[5], deviations[5]
+				temperature,
+				humidity,
+				pressure,
+				horizontals[0], horizontals_dv[0], zenits[0], zenits_dv[0], distances[0], distances_dv[0],
+				horizontals[1], horizontals_dv[1], zenits[1], zenits_dv[1], distances[1], distances_dv[1],
+				horizontals[2], horizontals_dv[2], zenits[2], zenits_dv[2], distances[2], distances_dv[2],
+				horizontals[3], horizontals_dv[3], zenits[3], zenits_dv[3], distances[3], distances_dv[3],
+				horizontals[4], horizontals_dv[4], zenits[4], zenits_dv[4], distances[4], distances_dv[4],
+				horizontals[5], horizontals_dv[5], zenits[5], zenits_dv[5], distances[5], distances_dv[5]
 			);
 		protocol_file.WriteString(protocol);
 		protocol_file.Close();
@@ -703,39 +766,50 @@ void CATAddConDlg::OnBnClickedRotate()
 	{
 		m_EsCommand.PositionRelativeHV(200, 0);
 		pMainWnd->m_status.SetWindowText(_T("Rotating..."));
+		m_rotate.EnableWindow(false);
+		
 	}
 }
 
 void CMyESAPIReceive::OnPositionRelativeHVAnswer()
 {
-	ES_SystemParameter active;
-	active = ES_SP_PowerLockFunctionActive;
-	m_EsCommand.SetLongSystemParameter(active, 1); // 0 off 1  on
-	pMainWnd->m_status.SetWindowText(_T("Rotation done"));
+	m_EsCommand.FindReflector(0.0001);
+	pMainWnd->m_status.SetWindowText(_T("finding reflector..."));
+	pMainWnd->m_rotate.EnableWindow(true);
+	
 }
-
+void CMyESAPIReceive::OnFindReflectorAnswer()
+{
+	pMainWnd->m_status.SetWindowText(_T("Reflector found"));
+}
 
 
 
 void CATAddConDlg::OnBnClickedIniOn()
 {
-	ES_SystemParameter status;
-	status = ES_SP_InclinationSensorState;
-	m_EsCommand.SetLongSystemParameter(status, 2);
+	if (m_bConnected == true) {
+		ES_SystemParameter status;
+		status = ES_SP_InclinationSensorState;
+		m_EsCommand.SetLongSystemParameter(status, 2);
+		pMainWnd->m_status.SetWindowText(_T("Inclination sensor on"));
+	}
 }
 
 
 void CATAddConDlg::OnBnClickedIniOff()
 {
-	ES_SystemParameter status;
-	status = ES_SP_InclinationSensorState;
-	m_EsCommand.SetLongSystemParameter(status, 0);
+	if (m_bConnected == true) {
+		ES_SystemParameter status;
+		status = ES_SP_InclinationSensorState;
+		m_EsCommand.SetLongSystemParameter(status, 0);
+		pMainWnd->m_status.SetWindowText(_T("Inclination sensor off"));
+	}
 }
 
 
 void CATAddConDlg::InitMeasuremodeBox()
 {
-	m_measuremode.AddString(_T("Standart"));
+	m_measuremode.AddString(_T("Standard"));
 	m_measuremode.AddString(_T("Fast"));
 	m_measuremode.AddString(_T("Precise"));
 	m_measuremode.AddString(_T("Outdoor"));
@@ -745,25 +819,35 @@ void CATAddConDlg::OnBnClickedSetmeasure()
 {
 	if (m_bConnected == true)
 	{
-		CString current_mode;
-		m_measuremode.GetWindowText(current_mode);
-		ES_MeasMode mode;
+		if (m_measuremode.EnableWindow(false))
+		{
+			m_measuremode.EnableWindow(true);
+			m_setmeasure.SetWindowText(_T("Apply mode"));
+		}
+		else if (m_measuremode.EnableWindow(true))
+		{
+			CString current_mode;
+			m_measuremode.GetWindowText(current_mode);
+			ES_MeasMode mode;
 
-		if (current_mode == "Standart") {
-			mode = ES_MM_Standard;
-			m_EsCommand.SetMeasurementMode(mode);
-		}
-		else if (current_mode == 'Fast') {
-			mode = ES_MM_Fast;
-			m_EsCommand.SetMeasurementMode(mode);
-		}
-		else if (current_mode == "Precise") {
-			mode = ES_MM_Precise;
-			m_EsCommand.SetMeasurementMode(mode);
-		}
-		else if (current_mode == "Outdoor") {
-			mode = ES_MM_Outdoor;
-			m_EsCommand.SetMeasurementMode(mode);
+			if (current_mode == "Standard") {
+				mode = ES_MM_Standard;
+				m_EsCommand.SetMeasurementMode(mode);
+			}
+			else if (current_mode == "Fast") {
+				mode = ES_MM_Fast;
+				m_EsCommand.SetMeasurementMode(mode);
+			}
+			else if (current_mode == "Precise") {
+				mode = ES_MM_Precise;
+				m_EsCommand.SetMeasurementMode(mode);
+			}
+			else if (current_mode == "Outdoor") {
+				mode = ES_MM_Outdoor;
+				m_EsCommand.SetMeasurementMode(mode);
+			}
+			m_measuremode.EnableWindow(false);
+			m_setmeasure.SetWindowText(_T("Change mode"));
 		}
 	}
 }
@@ -786,6 +870,7 @@ void CMyESAPIReceive::OnGetMeasurementModeAnswer(const ES_MeasMode measMode)
 	{
 		pMainWnd->m_measuremode.SetCurSel(3);
 	}
+	pMainWnd->m_measuremode.EnableWindow(false);
 }
 
 void CMyESAPIReceive::OnSetMeasurementModeAnswer()
@@ -805,3 +890,6 @@ void CMyESAPIReceive::OnGetLongSystemParamAnswer(const long lParameter)
 		pMainWnd->m_ini_off.SetCheck(true);
 	}
 }
+
+
+

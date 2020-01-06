@@ -51,9 +51,18 @@
     <None Include="res\ATAddCon.rc2">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="resource.hm">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\ATAddCon.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\icon1.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="tracker.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

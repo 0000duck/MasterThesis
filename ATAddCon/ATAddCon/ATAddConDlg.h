@@ -68,6 +68,7 @@ protected:
 	void OnGetMeasurementModeAnswer(const ES_MeasMode measMode);
 	void OnSetMeasurementModeAnswer();
 	void OnGetLongSystemParamAnswer(const long lParameter);
+	void OnFindReflectorAnswer();
 	CMyESAPICommand m_EsCommand; // can call next command after other is finished
 
 };
@@ -141,10 +142,18 @@ public:
 	afx_msg void OnBnClickedsetreflector();
 
 	SystemSettingsDataT setting_parameters;
-	double final_measure;
-	double final_deviation;
-	std::vector<double> lengths;
-	std::vector<double> deviations;
+	double dis;//final_measure;
+	double dis_dv;//final_deviation;
+	double Hz;
+	double Hz_dv;
+	double Z;
+	double Z_dv;
+	std::vector<double> distances;//lengths;
+	std::vector<double> distances_dv;//deviations;
+	std::vector<double> horizontals;
+	std::vector<double> horizontals_dv;
+	std::vector<double> zenits;
+	std::vector<double> zenits_dv;
 
 
 	CStatic m_product;
@@ -162,4 +171,6 @@ public:
 	CComboBox m_measuremode;
 	void InitMeasuremodeBox();
 	afx_msg void OnBnClickedSetmeasure();
+	CButton m_rotate;
+	CButton m_setmeasure;
 };
