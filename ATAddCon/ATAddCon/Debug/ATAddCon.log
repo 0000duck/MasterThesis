@@ -1,3 +1,0 @@
-﻿  ATAddConDlg.cpp
-c:\users\petr\desktop\moje_c++\diplomova_prace\pracovni_verze\ataddcon\ataddcon\ataddcondlg.cpp(348): warning C4805: '==': unsafe mix of type 'ES_BOOL' and type 'bool' in operation
-  ATAddCon.vcxproj -> C:\Users\Petr\Desktop\moje_C++\Diplomova_Prace\Pracovni_verze\ATAddCon\Debug\ATAddCon.exe
